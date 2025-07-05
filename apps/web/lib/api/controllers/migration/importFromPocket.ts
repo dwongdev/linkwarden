@@ -65,8 +65,8 @@ export default async function importFromPocket(
 
           await prisma.link.create({
             data: {
-              url: link.url?.trim().slice(0, 2047),
-              name: link.title?.trim().slice(0, 254) || "",
+              url: link.url?.slice(0, 2047).trim(),
+              name: link.title?.slice(0, 254).trim() || "",
               importDate: link.time_added
                 ? new Date(Number(link.time_added) * 1000).toISOString()
                 : null,
@@ -74,6 +74,22 @@ export default async function importFromPocket(
                 connect: {
                   id: newCollection.id,
                 },
+              },
+              tags: {
+                connectOrCreate: link?.tags
+                  ? link.tags.split("|").map((tag) => ({
+                      where: {
+                        name_ownerId: {
+                          name: tag?.slice(0, 50).trim() || "",
+                          ownerId: userId,
+                        },
+                      },
+                      create: {
+                        name: tag?.slice(0, 50).trim() || "",
+                        ownerId: userId,
+                      },
+                    }))
+                  : [],
               },
               createdBy: {
                 connect: {
